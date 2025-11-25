@@ -175,30 +175,15 @@
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ===================================================================
-        // ⭐ [필수] Firebase 웹 앱 설정 정보를 콘솔에서 복사하여 붙여 넣어주세요.
+        // ⭐ Firebase 웹 앱 설정 (사용자가 제공한 실제 값으로 업데이트됨)
         // ===================================================================
-         // Your web app's Firebase configuration
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBWKfL8rucrbpkQJKiPpU6t0iqz2by0yyE",
-  authDomain: "today-82c3c.firebaseapp.com",
-  projectId: "today-82c3c",
-  storageBucket: "today-82c3c.firebasestorage.app",
-  messagingSenderId: "480041913808",
-  appId: "1:480041913808:web:3dc1e6a3a454ccc04c3dd5",
-  measurementId: "G-R28B7S7B82"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+        const firebaseConfig = {
+            apiKey: "AIzaSyBWKfL8rucrbpkQJKiPpU6t0iqz2by0yyE",
+            authDomain: "today-82c3c.firebaseapp.com",
+            projectId: "today-82c3c",
+            messagingSenderId: "480041913808",
+            appId: "1:480041913808:web:3dc1e6a3a454ccc04c3dd5"
+        };
         // ===================================================================
 
         const appId = firebaseConfig.projectId || 'default-app-id';
@@ -239,7 +224,12 @@ const analytics = getAnalytics(app);
                         await signInAnonymously(auth);
                     } catch (error) {
                         console.error("Firebase 인증 실패:", error);
-                        userInfoDiv.textContent = '인증 오류 발생!';
+                        // 인증 실패 시, 사용자에게 오류를 명확하게 표시합니다.
+                        if (error.code === 'auth/operation-not-allowed') {
+                            userInfoDiv.innerHTML = '인증 오류: ⚠️ **익명 인증을 활성화** 해주세요.';
+                        } else {
+                            userInfoDiv.textContent = `인증 오류 발생! (코드: ${error.code})`;
+                        }
                     }
                 }
             });
