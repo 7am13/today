@@ -12,6 +12,7 @@
         .custom-scroll::-webkit-scrollbar-thumb { background-color: #9ca3af; border-radius: 3px; }
         .custom-scroll::-webkit-scrollbar-track { background-color: #e5e7eb; }
         .loading-overlay { background: rgba(255, 255, 255, 0.8); z-index: 100; }
+        .tab-button.active { border-color: #002FA7; color: #002FA7; background-color: #eef2ff; }
     </style>
 </head>
 <body class="min-h-screen p-4 sm:p-8">
@@ -19,7 +20,7 @@
     <div id="app" class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl overflow-hidden relative">
         
         <!-- 로딩 오버레이 (인증 및 초기 데이터 로드 중 표시) -->
-        <div id="loading-overlay" class="absolute inset-0 flex flex-col items-center justify-center loading-overlay hidden">
+        <div id="loading-overlay" class="absolute inset-0 flex flex-col items-center justify-center loading-overlay">
             <svg class="animate-spin h-10 w-10 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -34,20 +35,13 @@
                 <div id="user-info" class="text-xs opacity-80">
                     인증 대기 중...
                 </div>
-                <button id="google-login-btn" class="bg-white text-gray-800 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-gray-100 transition duration-150 flex items-center hidden">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png" alt="Google logo" class="w-4 h-4 mr-2">
-                    Google로 로그인
-                </button>
-                <button id="logout-btn" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-full shadow-md hover:bg-red-600 transition duration-150 hidden">
-                    로그아웃
-                </button>
             </div>
             <div id="data-path-info" class="mt-1 text-[10px] bg-black/30 p-1 rounded-sm hidden">
                 데이터 경로: <span id="base-path">N/A</span>
             </div>
         </header>
         
-        <!-- 콘텐츠 영역: 로그인 상태에 따라 표시/숨김 -->
+        <!-- 콘텐츠 영역: 인증 성공 후 표시 -->
         <div id="main-content" class="hidden">
             <nav id="tabs" class="flex border-b border-blue-100 bg-blue-50">
                 <button data-tab="todo" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('todo')">
@@ -56,7 +50,7 @@
                 <button data-tab="schedule" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('schedule')">
                     📅 일정
                 </button>
-                <button data-tab="meal-plan" class="tab-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('meal-plan')">
+                <button data-tab="meal-plan" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('meal-plan')">
                     🍽️ 식단
                 </button>
                 <button data-tab="self-care" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('self-care')">
@@ -193,33 +187,21 @@
 
             </main>
         </div>
-        
-        <!-- 로그인 필요 메시지 -->
-        <div id="login-required" class="p-8 text-center hidden">
-            <h2 class="text-2xl font-bold text-red-600 mb-4">🚨 접근 권한 없음</h2>
-            <p class="text-gray-700 mb-6">데이터를 보거나 기록하려면 Google 계정으로 로그인해야 합니다.</p>
-            <button id="google-login-btn-large" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center mx-auto">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png" alt="Google logo" class="w-5 h-5 mr-3">
-                Google 계정으로 로그인하기
-            </button>
-        </div>
-
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Google 로그인에 필요한 모듈 추가: GoogleAuthProvider, signInWithPopup
-        import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // 익명 및 커스텀 토큰 로그인에 필요한 모듈로 복원
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ===================================================================
         // ⭐ Firebase 웹 앱 설정 (환경 변수 사용)
         // ===================================================================
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            // 이 곳은 캔버스 환경에서 자동으로 채워집니다.
-        };
+        // Canvas 환경에서 제공되는 전역 변수들
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId || 'default-app-id';
-        // __initial_auth_token은 Google 로그인에서는 사용하지 않습니다.
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         // ===================================================================
 
         let app, db, auth;
@@ -238,6 +220,15 @@
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
+        }
+        
+        function formatDisplayDate(dateString) {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+            return `${year}년 ${month}월 ${day}일 (${dayOfWeek})`;
         }
 
         function showLoading(message) {
@@ -272,776 +263,612 @@
             }, 3000);
         }
 
-        // --- Google 로그인 함수 ---
-        async function handleGoogleLogin() {
-            if (!auth) {
-                showStatusMessage('Firebase 인증 서비스를 찾을 수 없습니다.', 'error');
-                return;
-            }
-            showLoading('Google 로그인 진행 중...');
-            const provider = new GoogleAuthProvider();
-            try {
-                // 팝업을 이용한 로그인 시도
-                const result = await signInWithPopup(auth, provider);
-                // 로그인이 성공하면 onAuthStateChanged 리스너가 처리합니다.
-                console.log("[Auth] Google 로그인 성공:", result.user.email);
-            } catch (error) {
-                console.error("[Auth Error] Google 로그인 실패:", error.code, error.message);
-                showStatusMessage('❌ Google 로그인 실패: ' + (error.code === 'auth/popup-closed-by-user' ? '팝업이 닫힘' : error.code), 'error');
-                hideLoading();
-                // 로그인 실패 시 UI 초기화
-                handleAuthStatus(null);
-            }
-        }
-        
-        async function handleLogout() {
-            try {
-                await signOut(auth);
-                showStatusMessage('로그아웃되었습니다.', 'info');
-            } catch (error) {
-                console.error("[Auth Error] 로그아웃 실패:", error);
-                showStatusMessage('❌ 로그아웃 실패: 콘솔을 확인하세요.', 'error');
-            }
-        }
-
         // --- 인증 상태 변화 핸들러 ---
         function handleAuthStatus(user) {
             const userInfoDiv = document.getElementById('user-info');
-            const loginBtn = document.getElementById('google-login-btn');
-            const loginBtnLarge = document.getElementById('google-login-btn-large');
-            const logoutBtn = document.getElementById('logout-btn');
             const mainContent = document.getElementById('main-content');
-            const loginRequired = document.getElementById('login-required');
-
+            const basePathInfo = document.getElementById('base-path');
+            
             if (user) {
-                // 로그인 성공 (Google 계정 확인)
+                // 로그인 성공 (커스텀 토큰 또는 익명 사용자)
                 userId = user.uid;
                 isAuthReady = true;
                 
-                const basePath = `artifacts/${appId}/users/${userId}`;
-                
-                // UI 업데이트: 로그인 상태
-                userInfoDiv.innerHTML = `로그인 완료 | 👤 ${user.displayName || '사용자'} (<span class="font-mono text-xs bg-black/30 p-1 rounded">${user.email}</span>)`;
-                document.getElementById('base-path').textContent = basePath;
+                userInfoDiv.innerHTML = `
+                    <span class="font-bold text-yellow-300">로그인 완료</span> | 
+                    UID: ${userId.substring(0, 8)}...
+                `;
+                basePathInfo.textContent = `/artifacts/${appId}/users/${userId}`;
                 document.getElementById('data-path-info').classList.remove('hidden');
-                
-                loginBtn.classList.add('hidden');
-                logoutBtn.classList.remove('hidden');
-                mainContent.classList.remove('hidden');
-                loginRequired.classList.add('hidden');
 
-                console.log(`[Auth Success] 사용자 ID: ${userId}, 이메일: ${user.email}`);
-                console.log(`[Auth Success] 데이터베이스 기준 경로: ${basePath}`);
-                
-                startRealtimeListeners();
+                mainContent.classList.remove('hidden');
+                switchTab(currentTab);
+                hideLoading();
+
+                if (!listenersStarted) {
+                    startListeners();
+                    listenersStarted = true;
+                }
+                showStatusMessage('Firebase 인증 및 데이터 연결 성공!', 'success');
+
             } else {
                 // 로그아웃 또는 인증 실패
                 userId = null;
                 isAuthReady = false;
-                listenersStarted = false; // 리스너가 시작되지 않도록 재설정
-                
-                // UI 업데이트: 로그아웃 상태
-                userInfoDiv.textContent = '로그아웃됨. 데이터 접근 불가.';
-                document.getElementById('data-path-info').classList.add('hidden');
+                listenersStarted = false; 
 
-                loginBtn.classList.remove('hidden');
-                logoutBtn.classList.add('hidden');
+                userInfoDiv.innerHTML = '인증되지 않음';
                 mainContent.classList.add('hidden');
-                loginRequired.classList.remove('hidden');
-
-                console.log("[Auth Status] 로그아웃 상태");
+                // 인증 재시도 로직은 initApp에서 처리됨
             }
-            hideLoading();
         }
 
-        async function initializeFirebase() {
-            showLoading('Firebase 서비스 초기화 중...');
-            setLogLevel('Debug'); // 디버그 로그 활성화
+        // --- Firestore 경로 및 유틸리티 함수 ---
+        function getCollectionRef(collectionName, date = null) {
+            if (!db || !userId) {
+                console.error("Firestore 또는 사용자 ID가 준비되지 않았습니다.");
+                return null;
+            }
+            const path = `artifacts/${appId}/users/${userId}/${collectionName}`;
+            
+            // 날짜 필터링이 필요한 컬렉션은 쿼리를 반환합니다.
+            if (date && ['schedule', 'meal-plan', 'self-care', 'content-log'].includes(collectionName)) {
+                return query(collection(db, path), where('date', '==', date));
+            }
 
-            if (!firebaseConfig.projectId) {
-                console.error("[Firebase] Firebase 설정이 불완전합니다. config 객체를 확인해주세요.");
-                document.getElementById('user-info').textContent = '⚠️ Firebase 설정 오류: config를 확인해주세요.';
-                hideLoading();
-                handleAuthStatus(null);
+            // ToDo는 날짜 필터링이 필요 없으므로 컬렉션 참조 자체를 반환합니다.
+            return collection(db, path);
+        }
+
+        // ===================================================================
+        // ⭐ CRUD 및 실시간 리스너 함수
+        // ===================================================================
+
+        // --- 데이터 렌더링 함수 ---
+        function renderTodos(docs) {
+            const todoList = document.getElementById('todo-list');
+            todoList.innerHTML = '';
+            
+            if (docs.length === 0) {
+                todoList.innerHTML = '<p class="text-gray-500 text-center py-4">아직 할 일이 없습니다. 새 할 일을 추가해보세요!</p>';
                 return;
             }
+
+            // 완료 상태에 따라 정렬: 미완료(false)가 먼저 오고, 그 다음 완료(true)
+            docs.sort((a, b) => a.data().completed - b.data().completed);
+
+            docs.forEach(docSnapshot => {
+                const data = docSnapshot.data();
+                const docId = docSnapshot.id;
+                const isCompleted = data.completed;
+
+                const item = document.createElement('div');
+                item.className = `flex items-center p-3 rounded-lg shadow-sm transition duration-150 ${isCompleted ? 'bg-green-50 border-l-4 border-green-500 opacity-70' : 'bg-white border-l-4 border-blue-500 hover:shadow-md'}`;
+                item.innerHTML = `
+                    <input type="checkbox" id="todo-${docId}" ${isCompleted ? 'checked' : ''} class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" data-id="${docId}">
+                    <label for="todo-${docId}" class="ml-3 text-base flex-grow cursor-pointer ${isCompleted ? 'line-through text-gray-500' : 'text-gray-800'}">
+                        ${data.text}
+                    </label>
+                    <button data-id="${docId}" class="delete-btn text-gray-400 hover:text-red-500 ml-4 p-1 rounded transition duration-150" title="삭제">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                `;
+                todoList.appendChild(item);
+            });
+
+            // 이벤트 리스너 추가 (위임 방식)
+            todoList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.onchange = (e) => toggleTodo(e.target.dataset.id, e.target.checked);
+            });
+            todoList.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = (e) => deleteItem('todo', e.currentTarget.dataset.id);
+            });
+        }
+
+        function renderSchedules(docs) {
+            const scheduleList = document.getElementById('schedule-list');
+            scheduleList.innerHTML = '';
+            document.getElementById('selected-schedule-date-display').textContent = formatDisplayDate(selectedScheduleDate);
+
+            if (docs.length === 0) {
+                scheduleList.innerHTML = '<p class="text-gray-500 text-center py-4">이 날짜에는 일정이 없습니다. 일정을 추가해보세요!</p>';
+                return;
+            }
+
+            // 시간 순서로 정렬
+            docs.sort((a, b) => a.data().time.localeCompare(b.data().time));
+
+            docs.forEach(docSnapshot => {
+                const data = docSnapshot.data();
+                const docId = docSnapshot.id;
+
+                const item = document.createElement('div');
+                item.className = `flex items-center p-3 rounded-lg shadow-sm bg-white border-l-4 border-green-500 hover:shadow-md transition duration-150`;
+                item.innerHTML = `
+                    <div class="font-mono text-lg font-bold text-green-700 min-w-[70px]">${data.time}</div>
+                    <div class="ml-4 text-base flex-grow text-gray-800">${data.description}</div>
+                    <button data-id="${docId}" class="delete-btn text-gray-400 hover:text-red-500 ml-4 p-1 rounded transition duration-150" title="삭제">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                `;
+                scheduleList.appendChild(item);
+            });
+            
+            scheduleList.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = (e) => deleteItem('schedule', e.currentTarget.dataset.id);
+            });
+        }
+
+        function renderMealPlans(docs) {
+            const mealList = document.getElementById('meal-list');
+            mealList.innerHTML = '';
+            document.getElementById('selected-meal-date-display').textContent = formatDisplayDate(selectedMealDate);
+            let totalCalories = 0;
+
+            if (docs.length === 0) {
+                document.getElementById('total-calories').textContent = 0;
+                mealList.innerHTML = '<p class="text-gray-500 text-center py-4">이 날짜에는 식단 기록이 없습니다.</p>';
+                return;
+            }
+            
+            // 식단 유형별 그룹화 및 순서 (아침, 점심, 저녁, 간식)
+            const mealOrder = { 'Breakfast': 1, 'Lunch': 2, 'Dinner': 3, 'Snack': 4 };
+            const groupedMeals = docs.reduce((acc, doc) => {
+                const data = doc.data();
+                const type = data.type;
+                acc[type] = acc[type] || [];
+                acc[type].push({...data, id: doc.id});
+                totalCalories += data.calories || 0;
+                return acc;
+            }, {});
+
+            const sortedTypes = Object.keys(groupedMeals).sort((a, b) => (mealOrder[a] || 99) - (mealOrder[b] || 99));
+
+            sortedTypes.forEach(type => {
+                const typeName = { 'Breakfast': '아침 ☀️', 'Lunch': '점심 🍜', 'Dinner': '저녁 🌙', 'Snack': '간식 🍪' }[type] || type;
+                
+                const typeHeader = document.createElement('h4');
+                typeHeader.className = 'text-lg font-semibold text-rose-600 mt-4 mb-2 border-b border-rose-200 pb-1';
+                typeHeader.textContent = typeName;
+                mealList.appendChild(typeHeader);
+
+                groupedMeals[type].forEach(data => {
+                    const item = document.createElement('div');
+                    item.className = `flex items-center justify-between p-3 rounded-lg shadow-sm bg-white border-l-4 border-rose-500 hover:shadow-md transition duration-150`;
+                    item.innerHTML = `
+                        <div class="flex-grow">
+                            <div class="text-base font-medium text-gray-800">${data.food}</div>
+                            <div class="text-sm text-gray-500">${data.calories ? `${data.calories} kcal` : '칼로리 미기록'}</div>
+                        </div>
+                        <button data-id="${data.id}" class="delete-btn text-gray-400 hover:text-red-500 ml-4 p-1 rounded transition duration-150" title="삭제">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    `;
+                    mealList.appendChild(item);
+                });
+            });
+
+            document.getElementById('total-calories').textContent = totalCalories;
+            
+            mealList.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = (e) => deleteItem('meal-plan', e.currentTarget.dataset.id);
+            });
+        }
+
+        function renderSelfCare(docs) {
+            const selfCareList = document.getElementById('self-care-list');
+            selfCareList.innerHTML = '';
+            document.getElementById('selected-self-care-date-display').textContent = formatDisplayDate(selectedSelfCareDate);
+
+            if (docs.length === 0) {
+                selfCareList.innerHTML = '<p class="text-gray-500 text-center py-4">이 날짜에는 셀프 케어 기록이 없습니다.</p>';
+                return;
+            }
+            
+            const careTypeNames = { 'Skin': '🧖 피부', 'BodyShape': '💪 몸매', 'Exercise': '🏃 운동' };
+
+            docs.forEach(docSnapshot => {
+                const data = docSnapshot.data();
+                const docId = docSnapshot.id;
+                const typeName = careTypeNames[data.type] || data.type;
+
+                const item = document.createElement('div');
+                item.className = `flex items-center p-3 rounded-lg shadow-sm bg-white border-l-4 border-purple-500 hover:shadow-md transition duration-150`;
+                item.innerHTML = `
+                    <div class="font-semibold text-purple-700 min-w-[100px]">${typeName}</div>
+                    <div class="ml-4 text-base flex-grow text-gray-800">${data.detail}</div>
+                    <button data-id="${docId}" class="delete-btn text-gray-400 hover:text-red-500 ml-4 p-1 rounded transition duration-150" title="삭제">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                `;
+                selfCareList.appendChild(item);
+            });
+            
+            selfCareList.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = (e) => deleteItem('self-care', e.currentTarget.dataset.id);
+            });
+        }
+
+        function renderContentLog(docs) {
+            const contentLogList = document.getElementById('content-log-list');
+            contentLogList.innerHTML = '';
+            document.getElementById('selected-content-log-date-display').textContent = formatDisplayDate(selectedContentLogDate);
+
+            if (docs.length === 0) {
+                contentLogList.innerHTML = '<p class="text-gray-500 text-center py-4">이 날짜에는 콘텐츠 기록이 없습니다.</p>';
+                return;
+            }
+
+            const typeIcons = { 
+                'Blog': '📝', 'YouTube': '📺', 'Drama': '🎬', 'Movie': '🍿', 'Book': '📚', 'Music': '🎵', 'Art': '🖼️', 'Other': '📎' 
+            };
+            
+            docs.forEach(docSnapshot => {
+                const data = docSnapshot.data();
+                const docId = docSnapshot.id;
+                const icon = typeIcons[data.type] || '❓';
+
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-lg shadow-sm bg-white border-l-4 border-sky-500 hover:shadow-md transition duration-150`;
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow">
+                            <div class="text-lg font-bold text-sky-700">${icon} ${data.title}</div>
+                            <div class="text-sm text-gray-600 mt-1">${data.note || '메모 없음'}</div>
+                        </div>
+                        <button data-id="${docId}" class="delete-btn text-gray-400 hover:text-red-500 ml-4 p-1 rounded transition duration-150" title="삭제">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                        유형: ${data.type}
+                    </div>
+                `;
+                contentLogList.appendChild(item);
+            });
+            
+            contentLogList.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = (e) => deleteItem('content-log', e.currentTarget.dataset.id);
+            });
+        }
+
+        // --- 실시간 리스너 설정 (onSnapshot) ---
+        function startListeners() {
+            if (!isAuthReady) return;
+
+            // 1. ToDo 리스너
+            onSnapshot(getCollectionRef('todo'), (snapshot) => {
+                renderTodos(snapshot.docs);
+            }, (error) => {
+                console.error("Error fetching todos:", error);
+                showStatusMessage('할 일 로드 중 오류가 발생했습니다.', 'error');
+            });
+            
+            // 2. 일정 리스너 (선택된 날짜 기반)
+            const updateScheduleListener = () => {
+                const q = getCollectionRef('schedule', selectedScheduleDate);
+                if (q) {
+                    onSnapshot(q, (snapshot) => {
+                        renderSchedules(snapshot.docs);
+                    }, (error) => {
+                        console.error("Error fetching schedules:", error);
+                        showStatusMessage('일정 로드 중 오류가 발생했습니다.', 'error');
+                    });
+                }
+            };
+            updateScheduleListener();
+
+            // 3. 식단 리스너 (선택된 날짜 기반)
+            const updateMealPlanListener = () => {
+                const q = getCollectionRef('meal-plan', selectedMealDate);
+                if (q) {
+                    onSnapshot(q, (snapshot) => {
+                        renderMealPlans(snapshot.docs);
+                    }, (error) => {
+                        console.error("Error fetching meal plans:", error);
+                        showStatusMessage('식단 로드 중 오류가 발생했습니다.', 'error');
+                    });
+                }
+            };
+            updateMealPlanListener();
+
+            // 4. 셀프 케어 리스너 (선택된 날짜 기반)
+            const updateSelfCareListener = () => {
+                const q = getCollectionRef('self-care', selectedSelfCareDate);
+                if (q) {
+                    onSnapshot(q, (snapshot) => {
+                        renderSelfCare(snapshot.docs);
+                    }, (error) => {
+                        console.error("Error fetching self care logs:", error);
+                        showStatusMessage('셀프 케어 기록 로드 중 오류가 발생했습니다.', 'error');
+                    });
+                }
+            };
+            updateSelfCareListener();
+
+            // 5. 콘텐츠 기록 리스너 (선택된 날짜 기반)
+            const updateContentLogListener = () => {
+                const q = getCollectionRef('content-log', selectedContentLogDate);
+                if (q) {
+                    onSnapshot(q, (snapshot) => {
+                        renderContentLog(snapshot.docs);
+                    }, (error) => {
+                        console.error("Error fetching content logs:", error);
+                        showStatusMessage('콘텐츠 기록 로드 중 오류가 발생했습니다.', 'error');
+                    });
+                }
+            };
+            updateContentLogListener();
+
+            // 날짜 변경 이벤트에 따라 리스너 업데이트 함수를 재할당 (실제로는 날짜만 변경하고 쿼리 재실행)
+            document.getElementById('schedule-date-picker').onchange = (e) => {
+                selectedScheduleDate = e.target.value;
+                updateScheduleListener(); // 날짜 변경 시 쿼리를 업데이트하고 다시 onSnapshot을 호출
+            };
+            document.getElementById('meal-date-picker').onchange = (e) => {
+                selectedMealDate = e.target.value;
+                updateMealPlanListener();
+            };
+            document.getElementById('self-care-date-picker').onchange = (e) => {
+                selectedSelfCareDate = e.target.value;
+                updateSelfCareListener();
+            };
+            document.getElementById('content-log-date-picker').onchange = (e) => {
+                selectedContentLogDate = e.target.value;
+                updateContentLogListener();
+            };
+        }
+
+
+        // --- 데이터 추가 함수 (C: Create) ---
+        async function addItem(collectionName, data) {
+            if (!isAuthReady) {
+                showStatusMessage('인증되지 않았습니다. 잠시 후 다시 시도해 주세요.', 'error');
+                return;
+            }
+            showLoading('데이터 저장 중...');
+            try {
+                const colRef = getCollectionRef(collectionName);
+                if (!colRef) return;
+                
+                await addDoc(colRef, data);
+                showStatusMessage('성공적으로 기록되었습니다!', 'success');
+            } catch (error) {
+                console.error(`Error adding ${collectionName}:`, error);
+                showStatusMessage('기록 추가 중 오류가 발생했습니다.', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- 할 일 완료/미완료 토글 함수 (U: Update) ---
+        async function toggleTodo(id, completed) {
+            if (!isAuthReady) return;
+            try {
+                const path = `artifacts/${appId}/users/${userId}/todo`;
+                const itemRef = doc(db, path, id);
+                await updateDoc(itemRef, { completed: completed });
+            } catch (error) {
+                console.error("Error updating todo:", error);
+                showStatusMessage('할 일 상태 변경 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // --- 데이터 삭제 함수 (D: Delete) ---
+        async function deleteItem(collectionName, id) {
+            if (!isAuthReady) return;
+            try {
+                const path = `artifacts/${appId}/users/${userId}/${collectionName}`;
+                await deleteDoc(doc(db, path, id));
+                showStatusMessage('성공적으로 삭제되었습니다.', 'info');
+            } catch (error) {
+                console.error(`Error deleting ${collectionName}:`, error);
+                showStatusMessage('기록 삭제 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // ===================================================================
+        // ⭐ 탭 및 폼 제출 핸들러
+        // ===================================================================
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`${tabId}-tab`).classList.remove('hidden');
+            document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+        }
+
+        // --- ToDo 폼 제출 핸들러 ---
+        document.getElementById('add-todo-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('todo-input');
+            const text = input.value.trim();
+            if (text) {
+                await addItem('todo', { text: text, completed: false, createdAt: new Date() });
+                input.value = '';
+            }
+        };
+
+        // --- 일정 폼 제출 핸들러 ---
+        document.getElementById('add-schedule-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const time = document.getElementById('schedule-time').value;
+            const desc = document.getElementById('schedule-desc').value.trim();
+            
+            if (time && desc) {
+                await addItem('schedule', {
+                    date: selectedScheduleDate,
+                    time: time,
+                    description: desc,
+                    createdAt: new Date()
+                });
+                document.getElementById('schedule-desc').value = '';
+            }
+        };
+
+        // --- 식단 폼 제출 핸들러 ---
+        document.getElementById('add-meal-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('meal-type').value;
+            const food = document.getElementById('food-item').value.trim();
+            const calories = parseInt(document.getElementById('calories').value) || 0;
+
+            if (food) {
+                await addItem('meal-plan', {
+                    date: selectedMealDate,
+                    type: type,
+                    food: food,
+                    calories: calories,
+                    createdAt: new Date()
+                });
+                document.getElementById('food-item').value = '';
+                document.getElementById('calories').value = '';
+            }
+        };
+
+        // --- 셀프 케어 폼 제출 핸들러 ---
+        document.getElementById('add-self-care-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('care-type').value;
+            const detail = document.getElementById('care-detail').value.trim();
+
+            if (type && detail) {
+                await addItem('self-care', {
+                    date: selectedSelfCareDate,
+                    type: type,
+                    detail: detail,
+                    createdAt: new Date()
+                });
+                document.getElementById('care-detail').value = '';
+            }
+        };
+
+        // --- 콘텐츠 기록 폼 제출 핸들러 ---
+        document.getElementById('add-content-log-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('content-type').value;
+            const title = document.getElementById('content-title').value.trim();
+            const note = document.getElementById('content-note').value.trim();
+
+            if (title) {
+                await addItem('content-log', {
+                    date: selectedContentLogDate,
+                    type: type,
+                    title: title,
+                    note: note,
+                    createdAt: new Date()
+                });
+                document.getElementById('content-title').value = '';
+                document.getElementById('content-note').value = '';
+            }
+        };
+
+        // --- 음성 인식 기능 (Web Speech API) ---
+        const voiceInputBtn = document.getElementById('voice-input-btn');
+        const todoInput = document.getElementById('todo-input');
+        const voiceStatus = document.getElementById('voice-status');
+
+        if (window.webkitSpeechRecognition) {
+            const SpeechRecognition = window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'ko-KR'; 
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                voiceStatus.classList.remove('hidden');
+                voiceInputBtn.innerHTML = '<svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-red-500 animate-pulse"><rect width="4" height="12" x="10" y="2" rx="2"/><path d="M12 18v4"/><path d="M21 10V8"/><path d="M3 10V8"/><path d="M19 10c0 3.9-3.1 7-7 7s-7-3.1-7-7"/></svg>';
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                todoInput.value = transcript;
+                voiceStatus.classList.add('hidden');
+            };
+
+            recognition.onend = () => {
+                voiceStatus.classList.add('hidden');
+                voiceInputBtn.innerHTML = '<svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect width="4" height="12" x="10" y="2" rx="2"/><path d="M12 18v4"/><path d="M21 10V8"/><path d="M3 10V8"/><path d="M19 10c0 3.9-3.1 7-7 7s-7-3.1-7-7"/></svg>';
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                voiceStatus.textContent = '음성 인식 오류: ' + event.error;
+                setTimeout(() => voiceStatus.classList.add('hidden'), 2000);
+            };
+
+            voiceInputBtn.onclick = () => {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    // 이미 인식 중일 때 발생하는 에러 무시
+                    if (e.name !== 'InvalidStateError') {
+                        console.error('Recognition start error:', e);
+                        showStatusMessage('음성 인식 시작에 실패했습니다.', 'error');
+                    }
+                }
+            };
+        } else {
+            voiceInputBtn.title = "음성 인식은 지원되지 않는 브라우저입니다.";
+            voiceInputBtn.disabled = true;
+            voiceInputBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // ===================================================================
+        // ⭐ 초기화 및 실행
+        // ===================================================================
+
+        // 날짜 선택기 기본값을 오늘 날짜로 설정
+        function initializeDatePickers() {
+            const today = formatDate(new Date());
+
+            document.getElementById('schedule-date-picker').value = today;
+            document.getElementById('meal-date-picker').value = today;
+            document.getElementById('self-care-date-picker').value = today;
+            document.getElementById('content-log-date-picker').value = today;
+            
+            selectedScheduleDate = today;
+            selectedMealDate = today;
+            selectedSelfCareDate = today;
+            selectedContentLogDate = today;
+
+            document.getElementById('selected-schedule-date-display').textContent = formatDisplayDate(today);
+            document.getElementById('selected-meal-date-display').textContent = formatDisplayDate(today);
+            document.getElementById('selected-self-care-date-display').textContent = formatDisplayDate(today);
+            document.getElementById('selected-content-log-date-display').textContent = formatDisplayDate(today);
+        }
+
+        async function initApp() {
+            setLogLevel('debug'); // Firestore 디버그 로깅 활성화
+            showLoading('앱 초기화 중...');
 
             try {
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Google 로그인 버튼 이벤트 리스너 연결
-                document.getElementById('google-login-btn').addEventListener('click', handleGoogleLogin);
-                document.getElementById('google-login-btn-large').addEventListener('click', handleGoogleLogin);
-                document.getElementById('logout-btn').addEventListener('click', handleLogout);
-
-                // onAuthStateChanged 리스너를 사용하여 모든 인증 상태 변화 처리
+                // onAuthStateChanged 리스너 설정
                 onAuthStateChanged(auth, handleAuthStatus);
 
-            } catch (error) {
-                console.error("[Firebase Initialization Error] Firebase 초기화 실패:", error.code, error.message);
-                document.getElementById('user-info').innerHTML = `<span class="text-red-400">초기화 오류! ⚠️ **${error.code}** 콘솔을 확인하세요.</span>`;
-                hideLoading();
-                handleAuthStatus(null);
-            }
-        }
-
-        function getCollectionRef(collectionName) {
-            // Firestore 경로: artifacts/{appId}/users/{userId}/{collectionName}
-            const path = `artifacts/${appId}/users/${userId}/${collectionName}`;
-            return collection(db, path);
-        }
-
-        // --- 탭 및 날짜 관리 ---
-
-        function switchTab(tabId) {
-            currentTab = tabId;
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`${tabId}-tab`).classList.remove('hidden');
-
-            document.querySelectorAll('.tab-button').forEach(el => {
-                el.classList.remove('bg-white', 'text-blue-600', 'border-blue-500');
-                el.classList.add('text-gray-600');
-            });
-
-            const activeBtn = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
-            activeBtn.classList.remove('text-gray-600');
-            activeBtn.classList.add('bg-white', 'text-blue-600', 'border-blue-500');
-
-            if (tabId === 'schedule') updateScheduleDateDisplay();
-            if (tabId === 'meal-plan') updateMealDateDisplay();
-            if (tabId === 'self-care') updateSelfCareDateDisplay();
-            if (tabId === 'content-log') updateContentLogDateDisplay();
-        }
-
-        window.onload = () => {
-            initializeFirebase(); 
-            switchTab(currentTab);
-            document.getElementById('schedule-date-picker').value = selectedScheduleDate;
-            document.getElementById('meal-date-picker').value = selectedMealDate;
-            document.getElementById('self-care-date-picker').value = selectedSelfCareDate;
-            document.getElementById('content-log-date-picker').value = selectedContentLogDate;
-        };
-
-        // --- 리스너 관리 ---
-        let scheduleUnsubscribe, mealPlanUnsubscribe, selfCareUnsubscribe, contentLogUnsubscribe, todoUnsubscribe;
-
-        function unsubscribeAll() {
-            if (todoUnsubscribe) todoUnsubscribe();
-            if (scheduleUnsubscribe) scheduleUnsubscribe();
-            if (mealPlanUnsubscribe) mealPlanUnsubscribe();
-            if (selfCareUnsubscribe) selfCareUnsubscribe();
-            if (contentLogUnsubscribe) contentLogUnsubscribe();
-        }
-
-        function updateListOnListenerError(listId, message) {
-            document.getElementById(listId).innerHTML = `<p class="text-red-500 text-center py-4 p-4 bg-red-50 rounded-lg">${message}</p>`;
-        }
-
-        function startRealtimeListeners() {
-            if (listenersStarted || !isAuthReady || !userId) return;
-            listenersStarted = true;
-            console.log(`[Listeners] Realtime listeners starting for user: ${userId}`);
-
-            // 기존 리스너가 있다면 해제 (로그아웃 후 재로그인 시 중복 방지)
-            unsubscribeAll();
-
-            // Todo List Listener (날짜 필터 없음)
-            todoUnsubscribe = onSnapshot(getCollectionRef('todos'), (snapshot) => {
-                const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                          .sort((a, b) => (a.createdAt && b.createdAt) ? a.createdAt.toDate() - b.createdAt.toDate() : 0);
-                renderTodos(todos);
-            }, (error) => { 
-                console.error("[Firestore Error: Todo] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
-                updateListOnListenerError('todo-list', '할 일 목록 로드 실패 (콘솔 확인)');
-            });
-
-            // 날짜 필터가 있는 탭 리스너 설정
-            setupScheduleListener();
-            setupMealPlanListener();
-            setupSelfCareListener();
-            setupContentLogListener();
-        }
-        
-        // === Todo List Logic ===
-        
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const voiceInputBtn = document.getElementById('voice-input-btn');
-        const todoInput = document.getElementById('todo-input');
-        const voiceStatus = document.getElementById('voice-status');
-        const micIcon = document.getElementById('mic-icon');
-        let recognition;
-        let isRecognizing = false;
-
-        // 음성 인식 기능 초기화 (기존 코드를 유지하되, AuthReady 체크를 추가)
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'ko-KR';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-
-            recognition.onstart = () => {
-                isRecognizing = true;
-                voiceStatus.classList.remove('hidden');
-                micIcon.classList.add('text-red-500', 'animate-pulse');
-                todoInput.placeholder = "말씀하세요...";
-            };
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                todoInput.value = todoInput.value + transcript + ' ';
-            };
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                voiceStatus.textContent = `오류 발생: ${event.error}. 마이크 권한을 확인하세요.`;
-                voiceStatus.classList.add('text-red-500');
-            };
-            recognition.onend = () => {
-                isRecognizing = false;
-                voiceStatus.classList.add('hidden');
-                voiceStatus.classList.remove('text-red-500');
-                voiceStatus.textContent = "말씀하세요. 듣고 있습니다...";
-                micIcon.classList.remove('text-red-500', 'animate-pulse');
-                todoInput.placeholder = "새로운 할 일을 입력하세요 (마이크 아이콘 클릭)";
-                todoInput.focus();
-                const len = todoInput.value.length;
-                todoInput.setSelectionRange(len, len);
-            };
-
-            voiceInputBtn.addEventListener('click', () => {
-                if (!isAuthReady) {
-                    showStatusMessage('로그인 후 이용해주세요.', 'info');
-                    return;
-                }
-                if (isRecognizing) {
-                    recognition.stop();
+                // 익명 또는 커스텀 토큰을 사용한 초기 인증 시도
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                    try {
-                        recognition.start();
-                    } catch (e) {
-                        console.error("인식 시작 실패:", e);
-                        voiceStatus.textContent = "음성 인식 시작 실패. 브라우저 지원 여부를 확인하세요.";
-                        voiceStatus.classList.remove('hidden');
-                        voiceStatus.classList.add('text-red-500');
-                    }
+                    await signInAnonymously(auth);
                 }
-            });
-        } else {
-            voiceInputBtn.disabled = true;
-            micIcon.classList.add('text-gray-300');
-            // 음성 인식 미지원 시 메시지 표시 로직
-        }
 
+                initializeDatePickers();
 
-        document.getElementById('add-todo-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!isAuthReady || !userId) {
-                showStatusMessage('로그인 후 이용해주세요.', 'info');
-                return;
-            }
-            const title = todoInput.value.trim();
-            if (title === "") return;
-
-            try {
-                await addDoc(getCollectionRef('todos'), {
-                    title: title,
-                    completed: false,
-                    // Firestore Timestamp 객체 생성을 위해 필드 명확화
-                    createdAt: new Date(),
-                });
-                todoInput.value = '';
-                showStatusMessage('✅ 할 일 저장 성공!');
             } catch (error) {
-                console.error("[Firestore Error: Todo Write] 할 일 추가 실패:", error);
-                showStatusMessage('❌ 할 일 저장 실패: 콘솔을 확인하세요.', 'error');
-            }
-        });
-
-        async function toggleTodo(id, currentStatus) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await updateDoc(doc(getCollectionRef('todos'), id), { completed: !currentStatus });
-            } catch (error) {
-                console.error("[Firestore Error: Todo Update] 할 일 상태 변경 실패:", error);
-                showStatusMessage('❌ 상태 변경 실패: 콘솔을 확인하세요.', 'error');
+                console.error("Firebase 초기화/인증 오류:", error);
+                showLoading('Firebase 연결에 실패했습니다. (오류: ' + error.code + ')');
+                document.getElementById('user-info').textContent = '인증 실패';
             }
         }
 
-        async function deleteTodo(id) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await deleteDoc(doc(getCollectionRef('todos'), id));
-                showStatusMessage('🗑️ 할 일 삭제 완료.');
-            } catch (error) {
-                console.error("[Firestore Error: Todo Delete] 할 일 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
-            }
-        }
-
-        function renderTodos(todos) {
-            const listEl = document.getElementById('todo-list');
-            listEl.innerHTML = ''; 
-
-            if (todos.length === 0) {
-                listEl.innerHTML = `<p class="text-gray-500 text-center py-4 p-4 bg-gray-50 rounded-lg">아직 할 일이 없습니다. 새로운 할 일을 추가하세요!</p>`;
-                return;
-            }
-
-            todos.forEach(todo => {
-                const isCompleted = todo.completed;
-                const item = document.createElement('div');
-                item.className = `flex items-center justify-between p-4 rounded-lg shadow-sm border ${isCompleted ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'} hover:shadow-md transition duration-150`;
-
-                const createdAt = todo.createdAt ? new Date(todo.createdAt.seconds * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit'}) : '';
-
-                item.innerHTML = `
-                    <div class="flex items-center flex-grow cursor-pointer" onclick="toggleTodo('${todo.id}', ${isCompleted})">
-                        <input type="checkbox" ${isCompleted ? 'checked' : ''} class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mr-4 pointer-events-none">
-                        <div class="flex flex-col">
-                            <span class="text-gray-800 ${isCompleted ? 'line-through text-gray-500' : 'font-medium'} break-words">
-                                ${todo.title}
-                            </span>
-                            <span class="text-xs text-gray-400 mt-0.5">${createdAt}</span>
-                        </div>
-                    </div>
-                    <button class="text-red-400 hover:text-red-600 transition duration-150 p-1 ml-4" onclick="deleteTodo('${todo.id}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-        
-        // === Schedule Logic ===
-
-        function setupScheduleListener() {
-            if (scheduleUnsubscribe) scheduleUnsubscribe(); 
-            if (!isAuthReady || !userId) return;
-
-            console.log(`[Schedule] Setting up listener for date: ${selectedScheduleDate}`);
-            const q = query(getCollectionRef('schedules'), where('date', '==', selectedScheduleDate));
-            scheduleUnsubscribe = onSnapshot(q, (snapshot) => {
-                const schedules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                            .sort((a, b) => a.time.localeCompare(b.time));
-                renderSchedules(schedules);
-            }, (error) => { 
-                console.error("[Firestore Error: Schedule] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
-                updateListOnListenerError('schedule-list', '일정 목록 로드 실패 (콘솔 확인)');
-            });
-            updateScheduleDateDisplay();
-        }
-
-        function updateScheduleDateDisplay() {
-            document.getElementById('selected-schedule-date-display').textContent = `${selectedScheduleDate}의 일정`;
-        }
-
-        document.getElementById('schedule-date-picker').addEventListener('change', (e) => {
-            selectedScheduleDate = e.target.value;
-            if (isAuthReady && userId) setupScheduleListener();
-        });
-
-        document.getElementById('add-schedule-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!isAuthReady || !userId) {
-                showStatusMessage('로그인 후 이용해주세요.', 'info');
-                return;
-            }
-            const time = document.getElementById('schedule-time').value;
-            const description = document.getElementById('schedule-desc').value;
-
-            if (!time || !description) return;
-
-            try {
-                await addDoc(getCollectionRef('schedules'), {
-                    date: selectedScheduleDate,
-                    time,
-                    description,
-                    createdAt: new Date(),
-                });
-                document.getElementById('schedule-desc').value = '';
-                showStatusMessage('✅ 일정 저장 성공!');
-            } catch (error) {
-                console.error("[Firestore Error: Schedule Write] 일정 추가 실패:", error);
-                showStatusMessage('❌ 일정 저장 실패: 콘솔을 확인하세요.', 'error');
-            }
-        });
-
-        async function deleteSchedule(id) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await deleteDoc(doc(getCollectionRef('schedules'), id));
-                showStatusMessage('🗑️ 일정 삭제 완료.');
-            } catch (error) {
-                console.error("[Firestore Error: Schedule Delete] 일정 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
-            }
-        }
-
-        function renderSchedules(schedules) {
-            const listEl = document.getElementById('schedule-list');
-            listEl.innerHTML = '';
-
-            if (schedules.length === 0) {
-                listEl.innerHTML = `<p class="text-gray-500 text-center py-4 p-4 bg-gray-50 rounded-lg">선택된 날짜에 일정이 없습니다. 새로운 일정을 추가하세요.</p>`;
-                return;
-            }
-
-            schedules.forEach(schedule => {
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center p-4 bg-white border border-l-4 border-green-500 rounded-lg shadow-sm hover:shadow-md transition duration-150';
-                item.innerHTML = `
-                    <div class="flex-grow">
-                        <p class="text-sm font-bold text-green-600 mb-1">${schedule.time}</p>
-                        <p class="text-gray-800">${schedule.description}</p>
-                    </div>
-                    <button class="text-red-500 hover:text-red-700 transition duration-150 p-1" onclick="deleteSchedule('${schedule.id}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-        
-        // === Meal Plan Logic ===
-
-        function setupMealPlanListener() {
-            if (mealPlanUnsubscribe) mealPlanUnsubscribe();
-            if (!isAuthReady || !userId) return;
-
-            console.log(`[MealPlan] Setting up listener for date: ${selectedMealDate}`);
-            const q = query(getCollectionRef('meal_plans'), where('date', '==', selectedMealDate));
-            mealPlanUnsubscribe = onSnapshot(q, (snapshot) => {
-                const mealPlans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                            .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
-                renderMealPlans(mealPlans);
-            }, (error) => { 
-                console.error("[Firestore Error: MealPlan] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
-                updateListOnListenerError('meal-list', '식단 기록 로드 실패 (콘솔 확인)');
-            });
-            updateMealDateDisplay();
-        }
-
-        function updateMealDateDisplay() {
-            document.getElementById('selected-meal-date-display').textContent = `${selectedMealDate}의 식단 기록`;
-        }
-
-        document.getElementById('meal-date-picker').addEventListener('change', (e) => {
-            selectedMealDate = e.target.value;
-            if (isAuthReady && userId) setupMealPlanListener();
-        });
-        
-        document.getElementById('add-meal-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!isAuthReady || !userId) {
-                showStatusMessage('로그인 후 이용해주세요.', 'info');
-                return;
-            }
-            const mealType = document.getElementById('meal-type').value;
-            const foodItem = document.getElementById('food-item').value;
-            const calories = parseInt(document.getElementById('calories').value) || 0;
-
-            if (!mealType || !foodItem) return;
-
-            try {
-                await addDoc(getCollectionRef('meal_plans'), {
-                    date: selectedMealDate,
-                    mealType,
-                    foodItem,
-                    calories,
-                    createdAt: new Date(),
-                });
-                document.getElementById('food-item').value = '';
-                document.getElementById('calories').value = '';
-                showStatusMessage('✅ 식단 기록 저장 성공!');
-            } catch (error) {
-                console.error("[Firestore Error: MealPlan Write] 식단 기록 실패:", error);
-                showStatusMessage('❌ 식단 기록 저장 실패: 콘솔을 확인하세요.', 'error');
-            }
-        });
-
-        async function deleteMealPlan(id) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await deleteDoc(doc(getCollectionRef('meal_plans'), id));
-                showStatusMessage('🗑️ 식단 기록 삭제 완료.');
-            } catch (error) {
-                console.error("[Firestore Error: MealPlan Delete] 식단 기록 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
-            }
-        }
-
-        function getMealTypeLabel(type) {
-            const map = { 'Breakfast': '아침', 'Lunch': '점심', 'Dinner': '저녁', 'Snack': '간식/기타' };
-            return map[type] || type;
-        }
-
-        function renderMealPlans(mealPlans) {
-            const listEl = document.getElementById('meal-list');
-            const totalCaloriesEl = document.getElementById('total-calories');
-            listEl.innerHTML = '';
-            let totalCalories = 0;
-
-            if (mealPlans.length === 0) {
-                listEl.innerHTML = `<p class="text-gray-500 text-center py-4 p-4 bg-gray-50 rounded-lg">선택된 날짜에 식단 기록이 없습니다.</p>`;
-            } else {
-                mealPlans.forEach(meal => {
-                    totalCalories += meal.calories || 0;
-
-                    const item = document.createElement('div');
-                    item.className = 'flex justify-between items-center p-4 bg-white border border-l-4 border-rose-500 rounded-lg shadow-sm hover:shadow-md transition duration-150';
-                    item.innerHTML = `
-                        <div class="flex-grow">
-                            <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">${getMealTypeLabel(meal.mealType)}</span>
-                            <p class="text-gray-800 mt-1"><span class="font-bold">${meal.foodItem}</span></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-lg font-bold text-rose-600">${meal.calories} <span class="text-sm font-normal">kcal</span></p>
-                            <button class="text-red-500 hover:text-red-700 transition duration-150 p-1 mt-1" onclick="deleteMealPlan('${meal.id}')">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg> 삭제
-                            </button>
-                        </div>
-                    `;
-                    listEl.appendChild(item);
-                });
-            }
-            totalCaloriesEl.textContent = totalCalories.toLocaleString();
-        }
-
-        // === Self-Care Logic ===
-
-        function setupSelfCareListener() {
-            if (selfCareUnsubscribe) selfCareUnsubscribe();
-            if (!isAuthReady || !userId) return;
-
-            console.log(`[SelfCare] Setting up listener for date: ${selectedSelfCareDate}`);
-            const q = query(getCollectionRef('self_care'), where('date', '==', selectedSelfCareDate));
-            selfCareUnsubscribe = onSnapshot(q, (snapshot) => {
-                const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                            .sort((a, b) => (a.createdAt && b.createdAt) ? a.createdAt.toDate() - b.createdAt.toDate() : 0);
-                renderSelfCare(records);
-            }, (error) => { 
-                console.error("[Firestore Error: SelfCare] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
-                updateListOnListenerError('self-care-list', '셀프 케어 로드 실패 (콘솔 확인)');
-            });
-            updateSelfCareDateDisplay();
-        }
-
-        function updateSelfCareDateDisplay() {
-            document.getElementById('selected-self-care-date-display').textContent = `${selectedSelfCareDate}의 셀프 케어 기록`;
-        }
-
-        document.getElementById('self-care-date-picker').addEventListener('change', (e) => {
-            selectedSelfCareDate = e.target.value;
-            if (isAuthReady && userId) setupSelfCareListener();
-        });
-
-        document.getElementById('add-self-care-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!isAuthReady || !userId) {
-                showStatusMessage('로그인 후 이용해주세요.', 'info');
-                return;
-            }
-            const type = document.getElementById('care-type').value;
-            const detail = document.getElementById('care-detail').value;
-
-            if (!type || !detail) return;
-
-            try {
-                await addDoc(getCollectionRef('self_care'), {
-                    date: selectedSelfCareDate,
-                    type,
-                    detail,
-                    createdAt: new Date(),
-                });
-                document.getElementById('care-detail').value = '';
-                showStatusMessage('✅ 셀프 케어 기록 저장 성공!');
-            } catch (error) {
-                console.error("[Firestore Error: SelfCare Write] 셀프 케어 기록 실패:", error);
-                showStatusMessage('❌ 셀프 케어 기록 저장 실패: 콘솔을 확인하세요.', 'error');
-            }
-        });
-
-        async function deleteSelfCare(id) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await deleteDoc(doc(getCollectionRef('self_care'), id));
-                showStatusMessage('🗑️ 셀프 케어 기록 삭제 완료.');
-            } catch (error) {
-                console.error("[Firestore Error: SelfCare Delete] 셀프 케어 기록 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
-            }
-        }
-
-        function getCareTypeLabel(type) {
-            const map = { 'Skin': '피부', 'BodyShape': '몸매', 'Exercise': '운동' };
-            return map[type] || type;
-        }
-
-        function getCareTypeColor(type) {
-            const map = {
-                'Skin': 'border-blue-400 bg-blue-50',
-                'BodyShape': 'border-pink-400 bg-pink-50',
-                'Exercise': 'border-yellow-400 bg-yellow-50',
-            };
-            return map[type] || 'border-gray-400 bg-gray-50';
-        }
-
-        function renderSelfCare(records) {
-            const listEl = document.getElementById('self-care-list');
-            listEl.innerHTML = '';
-
-            if (records.length === 0) {
-                listEl.innerHTML = `<p class="text-gray-500 text-center py-4 p-4 bg-gray-50 rounded-lg">선택된 날짜에 셀프 케어 기록이 없습니다.</p>`;
-                return;
-            }
-
-            records.forEach(record => {
-                const item = document.createElement('div');
-                item.className = `flex justify-between items-center p-4 rounded-lg shadow-sm border-l-4 ${getCareTypeColor(record.type)} hover:shadow-md transition duration-150`;
-                item.innerHTML = `
-                    <div class="flex-grow">
-                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full text-gray-700 bg-white/50">${getCareTypeLabel(record.type)}</span>
-                        <p class="text-gray-800 mt-1 font-medium">${record.detail}</p>
-                    </div>
-                    <button class="text-red-500 hover:text-red-700 transition duration-150 p-1" onclick="deleteSelfCare('${record.id}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-
-        // === Content Log Logic ===
-
-        function setupContentLogListener() {
-            if (contentLogUnsubscribe) contentLogUnsubscribe();
-            if (!isAuthReady || !userId) return;
-
-            console.log(`[ContentLog] Setting up listener for date: ${selectedContentLogDate}`);
-            const q = query(getCollectionRef('content_log'), where('date', '==', selectedContentLogDate));
-            contentLogUnsubscribe = onSnapshot(q, (snapshot) => {
-                const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                            .sort((a, b) => (a.createdAt && b.createdAt) ? a.createdAt.toDate() - b.createdAt.toDate() : 0);
-                renderContentLog(records);
-            }, (error) => { 
-                console.error("[Firestore Error: ContentLog] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
-                updateListOnListenerError('content-log-list', '콘텐츠 기록 로드 실패 (콘솔 확인)');
-            });
-            updateContentLogDateDisplay();
-        }
-
-        function updateContentLogDateDisplay() {
-            document.getElementById('selected-content-log-date-display').textContent = `${selectedContentLogDate}의 콘텐츠 기록`;
-        }
-
-        document.getElementById('content-log-date-picker').addEventListener('change', (e) => {
-            selectedContentLogDate = e.target.value;
-            if (isAuthReady && userId) setupContentLogListener();
-        });
-
-        document.getElementById('add-content-log-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!isAuthReady || !userId) {
-                showStatusMessage('로그인 후 이용해주세요.', 'info');
-                return;
-            }
-            const type = document.getElementById('content-type').value;
-            const title = document.getElementById('content-title').value;
-            const note = document.getElementById('content-note').value;
-
-            if (!type || !title) return;
-
-            try {
-                await addDoc(getCollectionRef('content_log'), {
-                    date: selectedContentLogDate,
-                    type,
-                    title,
-                    note,
-                    createdAt: new Date(),
-                });
-                document.getElementById('content-title').value = '';
-                document.getElementById('content-note').value = '';
-                showStatusMessage('✅ 콘텐츠 기록 저장 성공!');
-            } catch (error) {
-                console.error("[Firestore Error: ContentLog Write] 콘텐츠 기록 실패:", error);
-                showStatusMessage('❌ 콘텐츠 기록 저장 실패: 콘솔을 확인하세요.', 'error');
-            }
-        });
-
-        async function deleteContentLog(id) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await deleteDoc(doc(getCollectionRef('content_log'), id));
-                showStatusMessage('🗑️ 콘텐츠 기록 삭제 완료.');
-            } catch (error) {
-                console.error("[Firestore Error: ContentLog Delete] 콘텐츠 기록 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
-            }
-        }
-
-        function getContentIcon(type) {
-            const map = { 'Blog': '📝', 'YouTube': '📺', 'Movie': '🎞️', 'Book': '📚', 'Music': '🎵', 'Art': '🖼️', 'Other': '🔗' };
-            return map[type] || '🔗';
-        }
-
-        function getContentColor(type) {
-            const map = {
-                'Blog': 'border-sky-500 bg-sky-50',
-                'YouTube': 'border-red-500 bg-red-50',
-                'Movie': 'border-gray-800 bg-gray-100',
-                'Book': 'border-amber-500 bg-amber-50',
-                'Music': 'border-fuchsia-500 bg-fuchsia-50',
-                'Art': 'border-teal-500 bg-teal-50',
-                'Other': 'border-blue-500 bg-blue-50',
-            };
-            return map[type] || 'border-gray-300 bg-white';
-        }
-
-        function renderContentLog(records) {
-            const listEl = document.getElementById('content-log-list');
-            listEl.innerHTML = '';
-
-            if (records.length === 0) {
-                listEl.innerHTML = `<p class="text-gray-500 text-center py-4 p-4 bg-gray-50 rounded-lg">선택된 날짜에 콘텐츠 기록이 없습니다.</p>`;
-                return;
-            }
-
-            records.forEach(record => {
-                const item = document.createElement('div');
-                item.className = `flex justify-between items-center p-4 rounded-lg shadow-sm border-l-4 ${getContentColor(record.type)} hover:shadow-md transition duration-150`;
-                item.innerHTML = `
-                    <div class="flex-grow">
-                        <p class="text-sm font-bold text-gray-700 flex items-center mb-1">
-                            <span class="mr-2">${getContentIcon(record.type)}</span> ${record.type}
-                        </p>
-                        <p class="text-gray-900 text-lg font-semibold">${record.title}</p>
-                        ${record.note ? `<p class="text-gray-600 text-sm mt-1">"${record.note}"</p>` : ''}
-                    </div>
-                    <button class="text-red-500 hover:text-red-700 transition duration-150 p-1" onclick="deleteContentLog('${record.id}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-
-        window.switchTab = switchTab;
-        window.toggleTodo = toggleTodo;
-        window.deleteTodo = deleteTodo;
-        window.deleteSchedule = deleteSchedule;
-        window.deleteMealPlan = deleteMealPlan;
-        window.deleteSelfCare = deleteSelfCare;
-        window.deleteContentLog = deleteContentLog;
+        window.onload = initApp;
 
     </script>
 </body>
