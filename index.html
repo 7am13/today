@@ -30,173 +30,196 @@
         <header class="p-6 bg-[#002FA7] text-white shadow-lg">
             <h1 class="text-3xl font-bold mb-1">통합 관리 시스템 🌿</h1>
             <p class="text-blue-100 text-sm">일정, 할 일, 식단, 셀프 케어, 콘텐츠 한 곳에서 관리</p>
-            <div id="user-info" class="mt-2 text-xs opacity-80">
-                인증 중...
+            <div id="auth-section" class="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div id="user-info" class="text-xs opacity-80">
+                    인증 대기 중...
+                </div>
+                <button id="google-login-btn" class="bg-white text-gray-800 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-gray-100 transition duration-150 flex items-center hidden">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png" alt="Google logo" class="w-4 h-4 mr-2">
+                    Google로 로그인
+                </button>
+                <button id="logout-btn" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-full shadow-md hover:bg-red-600 transition duration-150 hidden">
+                    로그아웃
+                </button>
+            </div>
+            <div id="data-path-info" class="mt-1 text-[10px] bg-black/30 p-1 rounded-sm hidden">
+                데이터 경로: <span id="base-path">N/A</span>
             </div>
         </header>
+        
+        <!-- 콘텐츠 영역: 로그인 상태에 따라 표시/숨김 -->
+        <div id="main-content" class="hidden">
+            <nav id="tabs" class="flex border-b border-blue-100 bg-blue-50">
+                <button data-tab="todo" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('todo')">
+                    ✅ 투두
+                </button>
+                <button data-tab="schedule" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('schedule')">
+                    📅 일정
+                </button>
+                <button data-tab="meal-plan" class="tab-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('meal-plan')">
+                    🍽️ 식단
+                </button>
+                <button data-tab="self-care" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('self-care')">
+                    ✨ 셀프케어
+                </button>
+                <button data-tab="content-log" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('content-log')">
+                    📚 콘텐츠
+                </button>
+            </nav>
 
-        <nav id="tabs" class="flex border-b border-blue-100 bg-blue-50">
-            <button data-tab="todo" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('todo')">
-                ✅ 투두
-            </button>
-            <button data-tab="schedule" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('schedule')">
-                📅 일정
-            </button>
-            <button data-tab="meal-plan" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('meal-plan')">
-                🍽️ 식단
-            </button>
-            <button data-tab="self-care" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('self-care')">
-                ✨ 셀프케어
-            </button>
-            <button data-tab="content-log" class="tab-button w-1/5 py-3 px-2 text-center text-xs sm:text-sm font-semibold transition-colors duration-200 border-b-4 border-transparent hover:bg-blue-100" onclick="switchTab('content-log')">
-                📚 콘텐츠
-            </button>
-        </nav>
+            <main class="p-6">
+                
+                <div id="todo-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">✅ 오늘의 할 일</h2>
+                    <form id="add-todo-form" class="flex gap-2 mb-6">
+                        <div class="flex-grow relative">
+                            <input type="text" id="todo-input" placeholder="새로운 할 일을 입력하세요 (마이크 아이콘 클릭)" required class="w-full p-3 border border-gray-300 rounded-lg pr-12 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                            <button type="button" id="voice-input-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-blue-600 transition duration-150" title="음성 인식으로 입력">
+                                <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect width="4" height="12" x="10" y="2" rx="2"/><path d="M12 18v4"/><path d="M21 10V8"/><path d="M3 10V8"/><path d="M19 10c0 3.9-3.1 7-7 7s-7-3.1-7-7"/></svg>
+                            </button>
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-150 shadow-md">추가</button>
+                    </form>
 
-        <main class="p-6">
-            
-            <div id="todo-tab" class="tab-content hidden">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">✅ 오늘의 할 일</h2>
-                <form id="add-todo-form" class="flex gap-2 mb-6">
-                    <div class="flex-grow relative">
-                        <input type="text" id="todo-input" placeholder="새로운 할 일을 입력하세요 (마이크 아이콘 클릭)" required class="w-full p-3 border border-gray-300 rounded-lg pr-12 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
-                        <button type="button" id="voice-input-btn" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-blue-600 transition duration-150" title="음성 인식으로 입력">
-                            <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect width="4" height="12" x="10" y="2" rx="2"/><path d="M12 18v4"/><path d="M21 10V8"/><path d="M3 10V8"/><path d="M19 10c0 3.9-3.1 7-7 7s-7-3.1-7-7"/></svg>
-                        </button>
+                    <div id="voice-status" class="mb-4 text-center text-sm text-blue-600 hidden p-2 bg-blue-50 rounded-lg">
+                        말씀하세요. 듣고 있습니다...
                     </div>
-                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-150 shadow-md">추가</button>
-                </form>
+                    
+                    <div id="todo-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
+                        <p class="text-gray-500 text-center py-4">데이터 로드 중...</p>
+                    </div>
+                </div>
 
-                <div id="voice-status" class="mb-4 text-center text-sm text-blue-600 hidden p-2 bg-blue-50 rounded-lg">
-                    말씀하세요. 듣고 있습니다...
+                <div id="schedule-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">📅 오늘의 일정</h2>
+                    
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
+                        <input type="date" id="schedule-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <p class="text-blue-700 font-bold" id="selected-schedule-date-display"></p>
+                    </div>
+
+                    <form id="add-schedule-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
+                        <input type="time" id="schedule-time" required class="p-2 border border-gray-300 rounded-lg col-span-1">
+                        <input type="text" id="schedule-desc" placeholder="일정 내용" required class="p-2 border border-gray-300 rounded-lg col-span-2">
+                        <button type="submit" class="bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition duration-150 col-span-1">일정 추가</button>
+                    </form>
+                    
+                    <div id="schedule-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
+                        <p class="text-gray-500 text-center py-4">데이터 로드 중...</p>
+                    </div>
+                </div>
+
+                <div id="meal-plan-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">🍽️ 식단 기록</h2>
+
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
+                        <input type="date" id="meal-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <p class="text-blue-700 font-bold" id="selected-meal-date-display"></p>
+                    </div>
+
+                    <form id="add-meal-form" class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
+                        <select id="meal-type" required class="p-2 border border-gray-300 rounded-lg col-span-1">
+                            <option value="Breakfast">아침</option>
+                            <option value="Lunch">점심</option>
+                            <option value="Dinner">저녁</option>
+                            <option value="Snack">간식</option>
+                        </select>
+                        <input type="text" id="food-item" placeholder="음식명" required class="p-2 border border-gray-300 rounded-lg col-span-2">
+                        <input type="number" id="calories" placeholder="칼로리 (선택)" min="0" class="p-2 border border-gray-300 rounded-lg col-span-1">
+                        <button type="submit" class="bg-rose-500 text-white py-2 rounded-lg font-semibold hover:bg-rose-600 transition duration-150 col-span-1">기록</button>
+                    </form>
+
+                    <div id="meal-summary" class="bg-white p-4 rounded-lg shadow-md mb-4 border border-rose-100">
+                        <h3 class="text-xl font-semibold mb-2 text-rose-700">🗓️ 총 칼로리: <span id="total-calories" class="font-bold text-2xl">0</span> kcal</h3>
+                        <p class="text-sm text-gray-600">선택된 날짜의 총 칼로리 합산입니다.</p>
+                    </div>
+
+                    <div id="meal-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
+                        <p class="text-gray-500 text-center py-4">데이터 로드 중...</p>
+                    </div>
                 </div>
                 
-                <div id="todo-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
-                    <p class="text-gray-500 text-center py-4">인증을 기다리는 중...</p>
-                </div>
-            </div>
+                <div id="self-care-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">✨ 셀프 케어 기록</h2>
 
-            <div id="schedule-tab" class="tab-content hidden">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">📅 오늘의 일정</h2>
-                
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
-                    <input type="date" id="schedule-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
-                    <p class="text-blue-700 font-bold" id="selected-schedule-date-display"></p>
-                </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
+                        <input type="date" id="self-care-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <p class="text-blue-700 font-bold" id="selected-self-care-date-display"></p>
+                    </div>
 
-                <form id="add-schedule-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
-                    <input type="time" id="schedule-time" required class="p-2 border border-gray-300 rounded-lg col-span-1">
-                    <input type="text" id="schedule-desc" placeholder="일정 내용" required class="p-2 border border-gray-300 rounded-lg col-span-2">
-                    <button type="submit" class="bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition duration-150 col-span-1">일정 추가</button>
-                </form>
-                
-                <div id="schedule-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
-                    <p class="text-gray-500 text-center py-4">인증을 기다리는 중...</p>
-                </div>
-            </div>
+                    <form id="add-self-care-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
+                        <select type="text" id="care-type" required class="p-2 border border-gray-300 rounded-lg col-span-1">
+                            <option value="Skin">피부 (Skin)</option>
+                            <option value="BodyShape">몸매 (Body)</option>
+                            <option value="Exercise">운동 (Exercise)</option>
+                        </select>
+                        <input type="text" id="care-detail" placeholder="기록 내용 (ex: 팩, 눈바디, 30분 달리기)" required class="p-2 border border-gray-300 rounded-lg col-span-2">
+                        <button type="submit" class="bg-purple-500 text-white py-2 rounded-lg font-semibold hover:bg-purple-600 transition duration-150 col-span-1">기록</button>
+                    </form>
 
-            <div id="meal-plan-tab" class="tab-content hidden">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">🍽️ 식단 기록</h2>
-
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
-                    <input type="date" id="meal-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
-                    <p class="text-blue-700 font-bold" id="selected-meal-date-display"></p>
+                    <div id="self-care-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
+                        <p class="text-gray-500 text-center py-4">데이터 로드 중...</p>
+                    </div>
                 </div>
 
-                <form id="add-meal-form" class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
-                    <select id="meal-type" required class="p-2 border border-gray-300 rounded-lg col-span-1">
-                        <option value="Breakfast">아침</option>
-                        <option value="Lunch">점심</option>
-                        <option value="Dinner">저녁</option>
-                        <option value="Snack">간식</option>
-                    </select>
-                    <input type="text" id="food-item" placeholder="음식명" required class="p-2 border border-gray-300 rounded-lg col-span-2">
-                    <input type="number" id="calories" placeholder="칼로리 (선택)" min="0" class="p-2 border border-gray-300 rounded-lg col-span-1">
-                    <button type="submit" class="bg-rose-500 text-white py-2 rounded-lg font-semibold hover:bg-rose-600 transition duration-150 col-span-1">기록</button>
-                </form>
+                <div id="content-log-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">📚 콘텐츠 기록</h2>
 
-                <div id="meal-summary" class="bg-white p-4 rounded-lg shadow-md mb-4 border border-rose-100">
-                    <h3 class="text-xl font-semibold mb-2 text-rose-700">🗓️ 총 칼로리: <span id="total-calories" class="font-bold text-2xl">0</span> kcal</h3>
-                    <p class="text-sm text-gray-600">선택된 날짜의 총 칼로리 합산입니다.</p>
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
+                        <input type="date" id="content-log-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <p class="text-blue-700 font-bold" id="selected-content-log-date-display"></p>
+                    </div>
+
+                    <form id="add-content-log-form" class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
+                        <select id="content-type" required class="p-2 border border-gray-300 rounded-lg col-span-1">
+                            <option value="Blog">📝 블로그</option>
+                            <option value="YouTube">📺 유튜브</option>
+                            <option value="Drama">🎬 드라마</option>
+                            <option value="Movie">🍿 영화</option>
+                            <option value="Book">📚 책</option>
+                            <option value="Music">🎵 음악</option>
+                            <option value="Art">🖼️ 아트</option>
+                            <option value="Other">📎 기타</option>
+                        </select>
+                        <input type="text" id="content-title" placeholder="제목/이름" required class="p-2 border border-gray-300 rounded-lg col-span-2">
+                        <input type="text" id="content-note" placeholder="간단 메모/느낀 점" class="p-2 border border-gray-300 rounded-lg col-span-1">
+                        <button type="submit" class="bg-sky-500 text-white py-2 rounded-lg font-semibold hover:bg-sky-600 transition duration-150 col-span-1">기록</button>
+                    </form>
+
+                    <div id="content-log-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
+                        <p class="text-gray-500 text-center py-4">데이터 로드 중...</p>
+                    </div>
                 </div>
 
-                <div id="meal-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
-                    <p class="text-gray-500 text-center py-4">인증을 기다리는 중...</p>
-                </div>
-            </div>
-            
-            <div id="self-care-tab" class="tab-content hidden">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">✨ 셀프 케어 기록</h2>
+            </main>
+        </div>
+        
+        <!-- 로그인 필요 메시지 -->
+        <div id="login-required" class="p-8 text-center hidden">
+            <h2 class="text-2xl font-bold text-red-600 mb-4">🚨 접근 권한 없음</h2>
+            <p class="text-gray-700 mb-6">데이터를 보거나 기록하려면 Google 계정으로 로그인해야 합니다.</p>
+            <button id="google-login-btn-large" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center mx-auto">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png" alt="Google logo" class="w-5 h-5 mr-3">
+                Google 계정으로 로그인하기
+            </button>
+        </div>
 
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
-                    <input type="date" id="self-care-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
-                    <p class="text-blue-700 font-bold" id="selected-self-care-date-display"></p>
-                </div>
-
-                <form id="add-self-care-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
-                    <select type="text" id="care-type" required class="p-2 border border-gray-300 rounded-lg col-span-1">
-                        <option value="Skin">피부 (Skin)</option>
-                        <option value="BodyShape">몸매 (Body)</option>
-                        <option value="Exercise">운동 (Exercise)</option>
-                    </select>
-                    <input type="text" id="care-detail" placeholder="기록 내용 (ex: 팩, 눈바디, 30분 달리기)" required class="p-2 border border-gray-300 rounded-lg col-span-2">
-                    <button type="submit" class="bg-purple-500 text-white py-2 rounded-lg font-semibold hover:bg-purple-600 transition duration-150 col-span-1">기록</button>
-                </form>
-
-                <div id="self-care-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
-                    <p class="text-gray-500 text-center py-4">인증을 기다리는 중...</p>
-                </div>
-            </div>
-
-            <div id="content-log-tab" class="tab-content hidden">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">📚 콘텐츠 기록</h2>
-
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
-                    <input type="date" id="content-log-date-picker" class="p-3 border border-blue-300 rounded-lg text-lg font-medium focus:ring-blue-500 focus:border-blue-500 transition duration-150">
-                    <p class="text-blue-700 font-bold" id="selected-content-log-date-display"></p>
-                </div>
-
-                <form id="add-content-log-form" class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6 p-4 border border-gray-200 rounded-lg">
-                    <select id="content-type" required class="p-2 border border-gray-300 rounded-lg col-span-1">
-                        <option value="Blog">📝 블로그</option>
-                        <option value="YouTube">📺 유튜브</option>
-                        <option value="Movie">🎞️ 영화/드라마</option>
-                        <option value="Book">📚 책</option>
-                        <option value="Music">🎵 음악</option>
-                        <option value="Art">🖼️ 작품</option>
-                        <option value="Other">📎 기타</option>
-                    </select>
-                    <input type="text" id="content-title" placeholder="제목/이름" required class="p-2 border border-gray-300 rounded-lg col-span-2">
-                    <input type="text" id="content-note" placeholder="간단 메모/느낀 점" class="p-2 border border-gray-300 rounded-lg col-span-1">
-                    <button type="submit" class="bg-sky-500 text-white py-2 rounded-lg font-semibold hover:bg-sky-600 transition duration-150 col-span-1">기록</button>
-                </form>
-
-                <div id="content-log-list" class="space-y-3 custom-scroll max-h-96 overflow-y-auto pr-2">
-                    <p class="text-gray-500 text-center py-4">인증을 기다리는 중...</p>
-                </div>
-            </div>
-
-        </main>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Google 로그인에 필요한 모듈 추가: GoogleAuthProvider, signInWithPopup
+        import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ===================================================================
         // ⭐ Firebase 웹 앱 설정 (환경 변수 사용)
         // ===================================================================
-        // __firebase_config, __app_id, __initial_auth_token 변수는 캔버스 환경에서 제공됩니다.
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            // 이 곳은 캔버스 환경에서 자동으로 채워집니다.
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId || 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // __initial_auth_token은 Google 로그인에서는 사용하지 않습니다.
         // ===================================================================
 
         let app, db, auth;
@@ -226,9 +249,6 @@
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        /**
-         * 화면 오른쪽 하단에 상태 메시지를 표시합니다.
-         */
         function showStatusMessage(message, type = 'success') {
             const statusDiv = document.createElement('div');
             statusDiv.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 transition-transform transform translate-x-full duration-300`;
@@ -252,13 +272,97 @@
             }, 3000);
         }
 
+        // --- Google 로그인 함수 ---
+        async function handleGoogleLogin() {
+            if (!auth) {
+                showStatusMessage('Firebase 인증 서비스를 찾을 수 없습니다.', 'error');
+                return;
+            }
+            showLoading('Google 로그인 진행 중...');
+            const provider = new GoogleAuthProvider();
+            try {
+                // 팝업을 이용한 로그인 시도
+                const result = await signInWithPopup(auth, provider);
+                // 로그인이 성공하면 onAuthStateChanged 리스너가 처리합니다.
+                console.log("[Auth] Google 로그인 성공:", result.user.email);
+            } catch (error) {
+                console.error("[Auth Error] Google 로그인 실패:", error.code, error.message);
+                showStatusMessage('❌ Google 로그인 실패: ' + (error.code === 'auth/popup-closed-by-user' ? '팝업이 닫힘' : error.code), 'error');
+                hideLoading();
+                // 로그인 실패 시 UI 초기화
+                handleAuthStatus(null);
+            }
+        }
+        
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                showStatusMessage('로그아웃되었습니다.', 'info');
+            } catch (error) {
+                console.error("[Auth Error] 로그아웃 실패:", error);
+                showStatusMessage('❌ 로그아웃 실패: 콘솔을 확인하세요.', 'error');
+            }
+        }
+
+        // --- 인증 상태 변화 핸들러 ---
+        function handleAuthStatus(user) {
+            const userInfoDiv = document.getElementById('user-info');
+            const loginBtn = document.getElementById('google-login-btn');
+            const loginBtnLarge = document.getElementById('google-login-btn-large');
+            const logoutBtn = document.getElementById('logout-btn');
+            const mainContent = document.getElementById('main-content');
+            const loginRequired = document.getElementById('login-required');
+
+            if (user) {
+                // 로그인 성공 (Google 계정 확인)
+                userId = user.uid;
+                isAuthReady = true;
+                
+                const basePath = `artifacts/${appId}/users/${userId}`;
+                
+                // UI 업데이트: 로그인 상태
+                userInfoDiv.innerHTML = `로그인 완료 | 👤 ${user.displayName || '사용자'} (<span class="font-mono text-xs bg-black/30 p-1 rounded">${user.email}</span>)`;
+                document.getElementById('base-path').textContent = basePath;
+                document.getElementById('data-path-info').classList.remove('hidden');
+                
+                loginBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                mainContent.classList.remove('hidden');
+                loginRequired.classList.add('hidden');
+
+                console.log(`[Auth Success] 사용자 ID: ${userId}, 이메일: ${user.email}`);
+                console.log(`[Auth Success] 데이터베이스 기준 경로: ${basePath}`);
+                
+                startRealtimeListeners();
+            } else {
+                // 로그아웃 또는 인증 실패
+                userId = null;
+                isAuthReady = false;
+                listenersStarted = false; // 리스너가 시작되지 않도록 재설정
+                
+                // UI 업데이트: 로그아웃 상태
+                userInfoDiv.textContent = '로그아웃됨. 데이터 접근 불가.';
+                document.getElementById('data-path-info').classList.add('hidden');
+
+                loginBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                mainContent.classList.add('hidden');
+                loginRequired.classList.remove('hidden');
+
+                console.log("[Auth Status] 로그아웃 상태");
+            }
+            hideLoading();
+        }
+
         async function initializeFirebase() {
             showLoading('Firebase 서비스 초기화 중...');
-            
+            setLogLevel('Debug'); // 디버그 로그 활성화
+
             if (!firebaseConfig.projectId) {
-                console.error("Firebase 설정이 불완전합니다. config 객체를 확인해주세요.");
+                console.error("[Firebase] Firebase 설정이 불완전합니다. config 객체를 확인해주세요.");
                 document.getElementById('user-info').textContent = '⚠️ Firebase 설정 오류: config를 확인해주세요.';
                 hideLoading();
+                handleAuthStatus(null);
                 return;
             }
 
@@ -266,46 +370,20 @@
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                setLogLevel('Debug'); // 디버그 로그 활성화
+                
+                // Google 로그인 버튼 이벤트 리스너 연결
+                document.getElementById('google-login-btn').addEventListener('click', handleGoogleLogin);
+                document.getElementById('google-login-btn-large').addEventListener('click', handleGoogleLogin);
+                document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
-                const userInfoDiv = document.getElementById('user-info');
-
-                // 1. 캔버스 토큰으로 로그인 시도
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    userInfoDiv.textContent = '인증 완료 (Custom Token)';
-                } else {
-                    // 2. 토큰이 없으면 익명 로그인 시도 (새로고침 시 ID 유지에 문제 발생 가능성 있음)
-                    await signInAnonymously(auth);
-                    userInfoDiv.textContent = '인증 완료 (익명)';
-                }
-
-                // 3. Auth State Change Listener를 사용하여 최종 상태 확인 및 데이터 로드
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userInfoDiv.innerHTML = `👤 사용자 ID: <span class="font-mono text-xs bg-black/30 p-1 rounded">${userId}</span>`;
-                        isAuthReady = true;
-                        startRealtimeListeners();
-                        hideLoading();
-                    } else {
-                        // 사용자 토큰 만료 또는 로그아웃 처리
-                        console.log("User signed out or token expired. Attempting re-authentication on next reload.");
-                        userId = null;
-                        isAuthReady = false;
-                        userInfoDiv.textContent = '로그아웃됨. 새로고침하여 재인증 시도.';
-                    }
-                });
+                // onAuthStateChanged 리스너를 사용하여 모든 인증 상태 변화 처리
+                onAuthStateChanged(auth, handleAuthStatus);
 
             } catch (error) {
-                console.error("Firebase 초기화/인증 실패:", error);
-                document.getElementById('user-info').innerHTML = `인증 오류! ⚠️ **보안 규칙/인증 설정**을 확인하세요. (코드: ${error.code})`;
+                console.error("[Firebase Initialization Error] Firebase 초기화 실패:", error.code, error.message);
+                document.getElementById('user-info').innerHTML = `<span class="text-red-400">초기화 오류! ⚠️ **${error.code}** 콘솔을 확인하세요.</span>`;
                 hideLoading();
-                // 인증 실패 시, 데이터 리스트를 초기화하여 '인증을 기다리는 중' 대신 '오류' 메시지를 표시
-                ['todo-list', 'schedule-list', 'meal-list', 'self-care-list', 'content-log-list'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.innerHTML = `<p class="text-red-500 text-center py-4 p-4 bg-red-50 rounded-lg">데이터 로드 실패: 인증 오류로 접근 불가.</p>`;
-                });
+                handleAuthStatus(null);
             }
         }
 
@@ -331,7 +409,6 @@
             activeBtn.classList.remove('text-gray-600');
             activeBtn.classList.add('bg-white', 'text-blue-600', 'border-blue-500');
 
-            // 탭 스위치 시, 해당 탭의 날짜 표시 업데이트
             if (tabId === 'schedule') updateScheduleDateDisplay();
             if (tabId === 'meal-plan') updateMealDateDisplay();
             if (tabId === 'self-care') updateSelfCareDateDisplay();
@@ -339,39 +416,56 @@
         }
 
         window.onload = () => {
-            initializeFirebase(); // Firebase 초기화 및 인증 시작
+            initializeFirebase(); 
             switchTab(currentTab);
-            // 날짜 입력 필드 초기값 설정
             document.getElementById('schedule-date-picker').value = selectedScheduleDate;
             document.getElementById('meal-date-picker').value = selectedMealDate;
             document.getElementById('self-care-date-picker').value = selectedSelfCareDate;
             document.getElementById('content-log-date-picker').value = selectedContentLogDate;
         };
 
-        // --- 리스너 관리 (데이터 사라짐 문제 해결 핵심) ---
-        let scheduleUnsubscribe, mealPlanUnsubscribe, selfCareUnsubscribe, contentLogUnsubscribe;
+        // --- 리스너 관리 ---
+        let scheduleUnsubscribe, mealPlanUnsubscribe, selfCareUnsubscribe, contentLogUnsubscribe, todoUnsubscribe;
+
+        function unsubscribeAll() {
+            if (todoUnsubscribe) todoUnsubscribe();
+            if (scheduleUnsubscribe) scheduleUnsubscribe();
+            if (mealPlanUnsubscribe) mealPlanUnsubscribe();
+            if (selfCareUnsubscribe) selfCareUnsubscribe();
+            if (contentLogUnsubscribe) contentLogUnsubscribe();
+        }
+
+        function updateListOnListenerError(listId, message) {
+            document.getElementById(listId).innerHTML = `<p class="text-red-500 text-center py-4 p-4 bg-red-50 rounded-lg">${message}</p>`;
+        }
 
         function startRealtimeListeners() {
             if (listenersStarted || !isAuthReady || !userId) return;
             listenersStarted = true;
-            console.log(`[Listeners] Starting listeners for user: ${userId}`);
+            console.log(`[Listeners] Realtime listeners starting for user: ${userId}`);
+
+            // 기존 리스너가 있다면 해제 (로그아웃 후 재로그인 시 중복 방지)
+            unsubscribeAll();
 
             // Todo List Listener (날짜 필터 없음)
-            onSnapshot(getCollectionRef('todos'), (snapshot) => {
+            todoUnsubscribe = onSnapshot(getCollectionRef('todos'), (snapshot) => {
                 const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                          .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
+                                          .sort((a, b) => (a.createdAt && b.createdAt) ? a.createdAt.toDate() - b.createdAt.toDate() : 0);
                 renderTodos(todos);
-            }, (error) => { console.error("[Todo] 리스너 오류:", error); });
+            }, (error) => { 
+                console.error("[Firestore Error: Todo] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
+                updateListOnListenerError('todo-list', '할 일 목록 로드 실패 (콘솔 확인)');
+            });
 
-            // 날짜 필터가 있는 탭들은 현재 선택된 날짜로 리스너를 설정합니다.
+            // 날짜 필터가 있는 탭 리스너 설정
             setupScheduleListener();
             setupMealPlanListener();
             setupSelfCareListener();
             setupContentLogListener();
         }
-
-        // === Todo List Logic (기능은 동일) ===
-
+        
+        // === Todo List Logic ===
+        
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const voiceInputBtn = document.getElementById('voice-input-btn');
         const todoInput = document.getElementById('todo-input');
@@ -380,6 +474,7 @@
         let recognition;
         let isRecognizing = false;
 
+        // 음성 인식 기능 초기화 (기존 코드를 유지하되, AuthReady 체크를 추가)
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'ko-KR';
@@ -415,7 +510,7 @@
 
             voiceInputBtn.addEventListener('click', () => {
                 if (!isAuthReady) {
-                    showStatusMessage('인증 대기 중입니다. 잠시만 기다려주세요.', 'info');
+                    showStatusMessage('로그인 후 이용해주세요.', 'info');
                     return;
                 }
                 if (isRecognizing) {
@@ -434,16 +529,14 @@
         } else {
             voiceInputBtn.disabled = true;
             micIcon.classList.add('text-gray-300');
-            document.getElementById('voice-status').classList.remove('hidden');
-            document.getElementById('voice-status').textContent = "⚠️ 이 브라우저는 음성 입력을 지원하지 않습니다. (Chrome 권장)";
-            document.getElementById('voice-status').classList.add('text-red-500');
+            // 음성 인식 미지원 시 메시지 표시 로직
         }
 
 
         document.getElementById('add-todo-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!isAuthReady || !userId) {
-                showStatusMessage('인증 대기 중입니다. 잠시만 기다려주세요.', 'info');
+                showStatusMessage('로그인 후 이용해주세요.', 'info');
                 return;
             }
             const title = todoInput.value.trim();
@@ -453,13 +546,14 @@
                 await addDoc(getCollectionRef('todos'), {
                     title: title,
                     completed: false,
+                    // Firestore Timestamp 객체 생성을 위해 필드 명확화
                     createdAt: new Date(),
                 });
                 todoInput.value = '';
                 showStatusMessage('✅ 할 일 저장 성공!');
             } catch (error) {
-                console.error("할 일 추가 실패:", error);
-                showStatusMessage('❌ 할 일 저장 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: Todo Write] 할 일 추가 실패:", error);
+                showStatusMessage('❌ 할 일 저장 실패: 콘솔을 확인하세요.', 'error');
             }
         });
 
@@ -468,8 +562,8 @@
             try {
                 await updateDoc(doc(getCollectionRef('todos'), id), { completed: !currentStatus });
             } catch (error) {
-                console.error("할 일 상태 변경 실패:", error);
-                showStatusMessage('❌ 상태 변경 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: Todo Update] 할 일 상태 변경 실패:", error);
+                showStatusMessage('❌ 상태 변경 실패: 콘솔을 확인하세요.', 'error');
             }
         }
 
@@ -479,8 +573,8 @@
                 await deleteDoc(doc(getCollectionRef('todos'), id));
                 showStatusMessage('🗑️ 할 일 삭제 완료.');
             } catch (error) {
-                console.error("할 일 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: Todo Delete] 할 일 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
             }
         }
 
@@ -498,7 +592,6 @@
                 const item = document.createElement('div');
                 item.className = `flex items-center justify-between p-4 rounded-lg shadow-sm border ${isCompleted ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'} hover:shadow-md transition duration-150`;
 
-                // Firestore Timestamp 객체를 JavaScript Date 객체로 변환하여 저장 시각을 표시
                 const createdAt = todo.createdAt ? new Date(todo.createdAt.seconds * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit'}) : '';
 
                 item.innerHTML = `
@@ -524,7 +617,7 @@
         // === Schedule Logic ===
 
         function setupScheduleListener() {
-            if (scheduleUnsubscribe) scheduleUnsubscribe(); // 기존 리스너 해제
+            if (scheduleUnsubscribe) scheduleUnsubscribe(); 
             if (!isAuthReady || !userId) return;
 
             console.log(`[Schedule] Setting up listener for date: ${selectedScheduleDate}`);
@@ -533,7 +626,10 @@
                 const schedules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                             .sort((a, b) => a.time.localeCompare(b.time));
                 renderSchedules(schedules);
-            }, (error) => { console.error("[Schedule] 리스너 오류:", error); });
+            }, (error) => { 
+                console.error("[Firestore Error: Schedule] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
+                updateListOnListenerError('schedule-list', '일정 목록 로드 실패 (콘솔 확인)');
+            });
             updateScheduleDateDisplay();
         }
 
@@ -543,14 +639,13 @@
 
         document.getElementById('schedule-date-picker').addEventListener('change', (e) => {
             selectedScheduleDate = e.target.value;
-            // 날짜 변경 시, 리스너를 재설정하여 새로운 날짜의 데이터를 로드
             if (isAuthReady && userId) setupScheduleListener();
         });
 
         document.getElementById('add-schedule-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!isAuthReady || !userId) {
-                showStatusMessage('인증 대기 중입니다. 잠시만 기다려주세요.', 'info');
+                showStatusMessage('로그인 후 이용해주세요.', 'info');
                 return;
             }
             const time = document.getElementById('schedule-time').value;
@@ -568,8 +663,8 @@
                 document.getElementById('schedule-desc').value = '';
                 showStatusMessage('✅ 일정 저장 성공!');
             } catch (error) {
-                console.error("일정 추가 실패:", error);
-                showStatusMessage('❌ 일정 저장 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: Schedule Write] 일정 추가 실패:", error);
+                showStatusMessage('❌ 일정 저장 실패: 콘솔을 확인하세요.', 'error');
             }
         });
 
@@ -579,8 +674,8 @@
                 await deleteDoc(doc(getCollectionRef('schedules'), id));
                 showStatusMessage('🗑️ 일정 삭제 완료.');
             } catch (error) {
-                console.error("일정 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: Schedule Delete] 일정 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
             }
         }
 
@@ -623,7 +718,10 @@
                 const mealPlans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                             .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
                 renderMealPlans(mealPlans);
-            }, (error) => { console.error("[MealPlan] 리스너 오류:", error); });
+            }, (error) => { 
+                console.error("[Firestore Error: MealPlan] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
+                updateListOnListenerError('meal-list', '식단 기록 로드 실패 (콘솔 확인)');
+            });
             updateMealDateDisplay();
         }
 
@@ -639,7 +737,7 @@
         document.getElementById('add-meal-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!isAuthReady || !userId) {
-                showStatusMessage('인증 대기 중입니다. 잠시만 기다려주세요.', 'info');
+                showStatusMessage('로그인 후 이용해주세요.', 'info');
                 return;
             }
             const mealType = document.getElementById('meal-type').value;
@@ -660,8 +758,8 @@
                 document.getElementById('calories').value = '';
                 showStatusMessage('✅ 식단 기록 저장 성공!');
             } catch (error) {
-                console.error("식단 기록 실패:", error);
-                showStatusMessage('❌ 식단 기록 저장 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: MealPlan Write] 식단 기록 실패:", error);
+                showStatusMessage('❌ 식단 기록 저장 실패: 콘솔을 확인하세요.', 'error');
             }
         });
 
@@ -671,8 +769,8 @@
                 await deleteDoc(doc(getCollectionRef('meal_plans'), id));
                 showStatusMessage('🗑️ 식단 기록 삭제 완료.');
             } catch (error) {
-                console.error("식단 기록 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: MealPlan Delete] 식단 기록 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
             }
         }
 
@@ -725,9 +823,12 @@
             const q = query(getCollectionRef('self_care'), where('date', '==', selectedSelfCareDate));
             selfCareUnsubscribe = onSnapshot(q, (snapshot) => {
                 const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                            .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
+                                            .sort((a, b) => (a.createdAt && b.createdAt) ? a.createdAt.toDate() - b.createdAt.toDate() : 0);
                 renderSelfCare(records);
-            }, (error) => { console.error("[SelfCare] 리스너 오류:", error); });
+            }, (error) => { 
+                console.error("[Firestore Error: SelfCare] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
+                updateListOnListenerError('self-care-list', '셀프 케어 로드 실패 (콘솔 확인)');
+            });
             updateSelfCareDateDisplay();
         }
 
@@ -743,7 +844,7 @@
         document.getElementById('add-self-care-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!isAuthReady || !userId) {
-                showStatusMessage('인증 대기 중입니다. 잠시만 기다려주세요.', 'info');
+                showStatusMessage('로그인 후 이용해주세요.', 'info');
                 return;
             }
             const type = document.getElementById('care-type').value;
@@ -761,8 +862,8 @@
                 document.getElementById('care-detail').value = '';
                 showStatusMessage('✅ 셀프 케어 기록 저장 성공!');
             } catch (error) {
-                console.error("셀프 케어 기록 실패:", error);
-                showStatusMessage('❌ 셀프 케어 기록 저장 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: SelfCare Write] 셀프 케어 기록 실패:", error);
+                showStatusMessage('❌ 셀프 케어 기록 저장 실패: 콘솔을 확인하세요.', 'error');
             }
         });
 
@@ -772,8 +873,8 @@
                 await deleteDoc(doc(getCollectionRef('self_care'), id));
                 showStatusMessage('🗑️ 셀프 케어 기록 삭제 완료.');
             } catch (error) {
-                console.error("셀프 케어 기록 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: SelfCare Delete] 셀프 케어 기록 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
             }
         }
 
@@ -828,9 +929,12 @@
             const q = query(getCollectionRef('content_log'), where('date', '==', selectedContentLogDate));
             contentLogUnsubscribe = onSnapshot(q, (snapshot) => {
                 const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                                            .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
+                                            .sort((a, b) => (a.createdAt && b.createdAt) ? a.createdAt.toDate() - b.createdAt.toDate() : 0);
                 renderContentLog(records);
-            }, (error) => { console.error("[ContentLog] 리스너 오류:", error); });
+            }, (error) => { 
+                console.error("[Firestore Error: ContentLog] 리스너 오류 (보안 규칙 문제일 가능성 높음):", error); 
+                updateListOnListenerError('content-log-list', '콘텐츠 기록 로드 실패 (콘솔 확인)');
+            });
             updateContentLogDateDisplay();
         }
 
@@ -846,7 +950,7 @@
         document.getElementById('add-content-log-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!isAuthReady || !userId) {
-                showStatusMessage('인증 대기 중입니다. 잠시만 기다려주세요.', 'info');
+                showStatusMessage('로그인 후 이용해주세요.', 'info');
                 return;
             }
             const type = document.getElementById('content-type').value;
@@ -867,8 +971,8 @@
                 document.getElementById('content-note').value = '';
                 showStatusMessage('✅ 콘텐츠 기록 저장 성공!');
             } catch (error) {
-                console.error("콘텐츠 기록 실패:", error);
-                showStatusMessage('❌ 콘텐츠 기록 저장 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: ContentLog Write] 콘텐츠 기록 실패:", error);
+                showStatusMessage('❌ 콘텐츠 기록 저장 실패: 콘솔을 확인하세요.', 'error');
             }
         });
 
@@ -878,8 +982,8 @@
                 await deleteDoc(doc(getCollectionRef('content_log'), id));
                 showStatusMessage('🗑️ 콘텐츠 기록 삭제 완료.');
             } catch (error) {
-                console.error("콘텐츠 기록 삭제 실패:", error);
-                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
+                console.error("[Firestore Error: ContentLog Delete] 콘텐츠 기록 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 콘솔을 확인하세요.', 'error');
             }
         }
 
