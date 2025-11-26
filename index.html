@@ -191,6 +191,7 @@
         let app, db, auth;
         let userId = null;
         let isAuthReady = false;
+        let listenersStarted = false; // 리스너가 이미 시작되었는지 확인하는 플래그
         let currentTab = 'todo';
 
         let selectedScheduleDate = formatDate(new Date()); 
@@ -203,6 +204,34 @@
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
+        }
+
+        /**
+         * 화면 오른쪽 하단에 상태 메시지를 표시합니다.
+         */
+        function showStatusMessage(message, type = 'success') {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 transition-transform transform translate-x-full duration-300`;
+            if (type === 'success') {
+                statusDiv.classList.add('bg-green-600', 'font-semibold');
+            } else if (type === 'error') {
+                statusDiv.classList.add('bg-red-600', 'font-semibold');
+            } else if (type === 'info') {
+                statusDiv.classList.add('bg-blue-600');
+            }
+            statusDiv.textContent = message;
+            document.body.appendChild(statusDiv);
+
+            // 등장 애니메이션
+            requestAnimationFrame(() => {
+                statusDiv.classList.remove('translate-x-full');
+            });
+
+            // 사라지는 애니메이션
+            setTimeout(() => {
+                statusDiv.classList.add('translate-x-full');
+                statusDiv.addEventListener('transitionend', () => statusDiv.remove());
+            }, 3000);
         }
 
         if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
@@ -274,15 +303,17 @@
         let scheduleUnsubscribe, mealPlanUnsubscribe, selfCareUnsubscribe, contentLogUnsubscribe;
 
         function startRealtimeListeners() {
-            if (!isAuthReady || !userId) return;
-            
-            // Todo List Listener
+            if (listenersStarted || !isAuthReady || !userId) return;
+            listenersStarted = true;
+
+            // Todo List Listener (날짜 필터 없음)
             onSnapshot(getCollectionRef('todos'), (snapshot) => {
                 const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                           .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
                 renderTodos(todos);
             }, (error) => { console.error("Todo List 리스너 오류:", error); });
 
+            // 날짜 필터가 있는 탭들은 현재 선택된 날짜로 리스너를 설정합니다.
             setupScheduleListener();
             setupMealPlanListener();
             setupSelfCareListener();
@@ -367,8 +398,10 @@
                     createdAt: new Date(),
                 });
                 todoInput.value = '';
+                showStatusMessage('✅ 할 일 저장 성공!');
             } catch (error) {
                 console.error("할 일 추가 실패:", error);
+                showStatusMessage('❌ 할 일 저장 실패: 권한 문제일 수 있습니다.', 'error');
             }
         });
 
@@ -377,14 +410,17 @@
                 await updateDoc(doc(getCollectionRef('todos'), id), { completed: !currentStatus });
             } catch (error) {
                 console.error("할 일 상태 변경 실패:", error);
+                showStatusMessage('❌ 상태 변경 실패: 권한 문제일 수 있습니다.', 'error');
             }
         }
 
         async function deleteTodo(id) {
             try {
                 await deleteDoc(doc(getCollectionRef('todos'), id));
+                showStatusMessage('🗑️ 할 일 삭제 완료.');
             } catch (error) {
                 console.error("할 일 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
             }
         }
 
@@ -458,16 +494,20 @@
                     createdAt: new Date(),
                 });
                 document.getElementById('schedule-desc').value = '';
+                showStatusMessage('✅ 일정 저장 성공!');
             } catch (error) {
                 console.error("일정 추가 실패:", error);
+                showStatusMessage('❌ 일정 저장 실패: 권한 문제일 수 있습니다.', 'error');
             }
         });
 
         async function deleteSchedule(id) {
             try {
                 await deleteDoc(doc(getCollectionRef('schedules'), id));
+                showStatusMessage('🗑️ 일정 삭제 완료.');
             } catch (error) {
                 console.error("일정 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
             }
         }
 
@@ -540,16 +580,20 @@
                 });
                 document.getElementById('food-item').value = '';
                 document.getElementById('calories').value = '';
+                showStatusMessage('✅ 식단 기록 저장 성공!');
             } catch (error) {
                 console.error("식단 기록 실패:", error);
+                showStatusMessage('❌ 식단 기록 저장 실패: 권한 문제일 수 있습니다.', 'error');
             }
         });
 
         async function deleteMealPlan(id) {
             try {
                 await deleteDoc(doc(getCollectionRef('meal_plans'), id));
+                showStatusMessage('🗑️ 식단 기록 삭제 완료.');
             } catch (error) {
                 console.error("식단 기록 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
             }
         }
 
@@ -631,16 +675,20 @@
                     createdAt: new Date(),
                 });
                 document.getElementById('care-detail').value = '';
+                showStatusMessage('✅ 셀프 케어 기록 저장 성공!');
             } catch (error) {
                 console.error("셀프 케어 기록 실패:", error);
+                showStatusMessage('❌ 셀프 케어 기록 저장 실패: 권한 문제일 수 있습니다.', 'error');
             }
         });
 
         async function deleteSelfCare(id) {
             try {
                 await deleteDoc(doc(getCollectionRef('self_care'), id));
+                showStatusMessage('🗑️ 셀프 케어 기록 삭제 완료.');
             } catch (error) {
                 console.error("셀프 케어 기록 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
             }
         }
 
@@ -727,16 +775,20 @@
                 });
                 document.getElementById('content-title').value = '';
                 document.getElementById('content-note').value = '';
+                showStatusMessage('✅ 콘텐츠 기록 저장 성공!');
             } catch (error) {
                 console.error("콘텐츠 기록 실패:", error);
+                showStatusMessage('❌ 콘텐츠 기록 저장 실패: 권한 문제일 수 있습니다.', 'error');
             }
         });
 
         async function deleteContentLog(id) {
             try {
                 await deleteDoc(doc(getCollectionRef('content_log'), id));
+                showStatusMessage('🗑️ 콘텐츠 기록 삭제 완료.');
             } catch (error) {
                 console.error("콘텐츠 기록 삭제 실패:", error);
+                showStatusMessage('❌ 삭제 실패: 권한 문제일 수 있습니다.', 'error');
             }
         }
 
